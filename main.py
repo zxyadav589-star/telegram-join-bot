@@ -1,4 +1,7 @@
 import logging
+import os
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from threading import Thread
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ChatJoinRequestHandler, ContextTypes
 
@@ -18,6 +21,18 @@ VIDEO_URL = "https://t.me/c/2540430712/4242"
 APK_URL = "https://t.me/c/2540430712/4243"
 SUPPORT_USERNAME = "Krix_Trader"
 # -------------------------------------------------------------
+
+# Render ke port error ko fix karne ke liye dummy web server
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"1LVL FIXXER Bot is running!")
+
+def run_web_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(('0.0.0.0', port), SimpleHandler)
+    server.serve_forever()
 
 async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     request = update.chat_join_request
@@ -85,6 +100,12 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         print(f"Error sending message to user {user_id}: {e}")
 
 def main():
+    # Web server ko background mein start karein taaki Render port detect kar sake
+    server_thread = Thread(target=run_web_server)
+    server_thread.daemon = True
+    server_thread.start()
+
+    # Telegram bot start karein
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
     print("1LVL FIXXER Bot start ho gaya hai...")
